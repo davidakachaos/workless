@@ -58,7 +58,7 @@ module Delayed
   module Sequel
     module Job
       class Delayed::Sequel::Job::Mock
-        
+
       end
     end
   end

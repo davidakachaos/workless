@@ -8,7 +8,7 @@ describe Delayed::Sequel::Job do
     end
     context 'with no workers' do
       before(:each) do
-        Delayed::Sequel::Job::Mock.scaler.should_receive(:workers).and_return(0)
+        Delayed::Sequel::Job::Mock.scaler.stub(:workers).and_return(0)
       end
       it "should scale up" do
         if_there_are_jobs 1

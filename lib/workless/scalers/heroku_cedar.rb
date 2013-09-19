@@ -7,14 +7,29 @@ module Delayed
         extend Delayed::Workless::Scaler::HerokuClient
 
         def self.up
-          client.post_ps_scale(ENV['APP_NAME'], 'worker', self.workers_needed) if self.workers_needed > self.min_workers and self.workers < self.workers_needed
+          if self.workers < self.workers_needed
+            client.post_ps_scale(ENV['APP_NAME'], 'worker', self.workers_needed)
+            self.workers += 1
+          end
         end
 
         def self.down
-          client.post_ps_scale(ENV['APP_NAME'], 'worker', self.min_workers) unless self.jobs.count > 0 or self.workers == self.min_workers
+          puts "DOWN: #{(self.workers || 0).inspect} // @workers: #{@workers.inspect}"
+          if self.workers > self.workers_needed
+            client.post_ps_scale(ENV['APP_NAME'], 'worker', self.workers_needed)
+            self.workers -= 1
+          end
+        end
+
+        def self.workers=(workers)
+          @workers = workers
         end
 
         def self.workers
+          @workers ||= get_workers_from_api
+        end
+
+        def self.get_workers_from_api
           client.get_ps(ENV['APP_NAME']).body.count { |p| p["process"] =~ /worker\.\d?/ }
         end
 
@@ -25,6 +40,7 @@ module Delayed
         # ENV['WORKLESS_MIN_WORKERS']
         #
         def self.workers_needed
+          puts "Self.workers_needed : #{[[(self.jobs.count.to_f / self.workers_ratio).ceil, self.max_workers].min, self.min_workers].max}"
           [[(self.jobs.count.to_f / self.workers_ratio).ceil, self.max_workers].min, self.min_workers].max
         end
 
