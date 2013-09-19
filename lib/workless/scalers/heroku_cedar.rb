@@ -7,26 +7,34 @@ module Delayed
         extend Delayed::Workless::Scaler::HerokuClient
 
         def self.up
+          # puts "UP: #{(self.workers || 0).inspect} // NEEDED: #{self.workers_needed} // ENV['WORKLESS_WORKERS_COUNT']: #{ENV['WORKLESS_WORKERS_COUNT'].inspect}"
           if self.workers < self.workers_needed
+            # puts "SCALE UP! From #{self.workers} to #{self.workers_needed}"
             client.post_ps_scale(ENV['APP_NAME'], 'worker', self.workers_needed)
-            self.workers += 1
+            self.workers = self.workers_needed
           end
         end
 
         def self.down
-          puts "DOWN: #{(self.workers || 0).inspect} // @workers: #{@workers.inspect}"
+          # puts "DOWN: #{(self.workers || 0).inspect} // NEEDED: #{self.workers_needed} // ENV['WORKLESS_WORKERS_COUNT']: #{ENV['WORKLESS_WORKERS_COUNT'].inspect}"
           if self.workers > self.workers_needed
+            # puts "SCALE DOWN! From #{self.workers} to #{self.workers_needed}"
             client.post_ps_scale(ENV['APP_NAME'], 'worker', self.workers_needed)
-            self.workers -= 1
+            self.workers = self.workers_needed
           end
         end
 
+        def initialize
+          ENV['WORKLESS_WORKERS_COUNT'] = nil
+        end
+
         def self.workers=(workers)
-          @workers = workers
+          # puts "SET NUM_WORKERS TO: #{workers}"
+          ENV['WORKLESS_WORKERS_COUNT'] = workers.to_s
         end
 
         def self.workers
-          @workers ||= get_workers_from_api
+          (ENV['WORKLESS_WORKERS_COUNT'] ||= get_workers_from_api.to_s).to_i
         end
 
         def self.get_workers_from_api
@@ -40,7 +48,7 @@ module Delayed
         # ENV['WORKLESS_MIN_WORKERS']
         #
         def self.workers_needed
-          puts "Self.workers_needed : #{[[(self.jobs.count.to_f / self.workers_ratio).ceil, self.max_workers].min, self.min_workers].max}"
+          # puts "JOBS: #{self.jobs.count} // ratio: #{self.workers_ratio} // max: #{self.max_workers} // min: #{self.min_workers}"
           [[(self.jobs.count.to_f / self.workers_ratio).ceil, self.max_workers].min, self.min_workers].max
         end
 

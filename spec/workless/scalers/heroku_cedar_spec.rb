@@ -4,6 +4,9 @@ describe Delayed::Workless::Scaler::HerokuCedar do
   before(:each) do
     ENV['WORKLESS_MAX_WORKERS'] = ENV['WORKLESS_MIN_WORKERS'] = ENV['WORKLESS_WORKERS_RATIO'] = nil
   end
+  after(:all) do
+    ENV.delete('WORKLESS_WORKERS_COUNT')
+  end
 
   context 'with jobs' do
 
@@ -48,7 +51,7 @@ describe Delayed::Workless::Scaler::HerokuCedar do
     context 'without workers' do
 
       before do
-        Delayed::Workless::Scaler::HerokuCedar.should_receive(:workers).and_return(0)
+        Delayed::Workless::Scaler::HerokuCedar.stub(:workers).and_return(0)
       end
 
       it 'should not set anything' do
