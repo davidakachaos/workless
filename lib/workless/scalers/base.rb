@@ -6,8 +6,11 @@ module Delayed
 
       class Base
         def self.jobs
-          if Rails.version >= "3.0.0"
-            Delayed::Job.where(:failed_at => nil)
+          queues = ENV['WORKLESS_QUEUES'].to_s.split(',')
+          queues ||= [::Delayed::Worker.default_queue_name]
+
+          if ::ActiveRecord::VERSION::MAJOR >= 3
+            Delayed::Job.where(:failed_at => nil).where(queue: queues)
           else
             Delayed::Job.all(:conditions => { :failed_at => nil })
           end
