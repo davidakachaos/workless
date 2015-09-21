@@ -7,7 +7,7 @@ module Delayed
       class Base
         def self.jobs
           if Rails.version >= "3.0.0"
-            Delayed::Job.where(:failed_at => nil)
+            Delayed::Job.where(:failed_at => nil).where('run_at <= ?', Time.zone.now)
           else
             Delayed::Job.all(:conditions => { :failed_at => nil })
           end

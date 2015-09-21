@@ -11,6 +11,10 @@ SimpleCov.start
 
 Bundler.require(:default)
 
+RSpec.configure do |config|
+  config.expect_with(:rspec) { |c| c.syntax = :should }
+end
+
 require 'workless'
 
 module Delayed
